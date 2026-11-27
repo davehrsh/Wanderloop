@@ -48,3 +48,5 @@
 @media(max-width:850px){.navlinks{gap:17px}.modal.checkout-modal{padding:23px}.ck-grid{gap:18px}}
 @media(max-width:650px){.modal.checkout-modal{padding:18px;max-height:94vh}.ck-grid{grid-template-columns:1fr;gap:18px}.ck-summary{padding:16px}.ck-progress{gap:4px;margin:13px 0 18px}.ck-progress span{font-size:10px;gap:4px}.ck-progress i{width:20px;height:20px}.ck-main h3{font-size:20px}.ck-confirm h2{font-size:30px!important}.ck-actions{gap:8px}.ck-actions .primary,.ck-actions .secondary{padding:10px 12px;font-size:12px}.ck-triphead h3{font-size:20px}.ck-fields{gap:8px}}
 @media(max-width:360px){.ck-fields,.ck-arms{grid-template-columns:1fr}}
+
+.ck-property-photo{width:100%;height:115px;object-fit:cover;border-radius:4px;margin:12px 0 0;display:block;background:var(--sage)}
