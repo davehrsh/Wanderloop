@@ -16,6 +16,8 @@ function applyArm(){const h=hotels.find(h=>h.id==="republique");[h.discount,h.cr
 const original=handle,originalOpen=openModal,originalClose=closeModal;
 openModal=function(html){const wasOpen=$("overlay").classList.contains("open");if(!wasOpen)returnFocus=document.activeElement;originalOpen(html);if(wasOpen)lastFocus=returnFocus;document.querySelector(".modal").scrollTop=0;};
 closeModal=function(){originalClose();document.querySelector(".modal").classList.remove("checkout-modal");flow=null;if(returnFocus&&returnFocus.isConnected)returnFocus.focus();returnFocus=null};
+$("closeModal").removeEventListener("click",originalClose);
+$("closeModal").addEventListener("click",closeModal);
 const act=(action,label,cls="secondary",id="")=>'<button type="button" class="'+cls+'" data-action="'+action+'"'+(id?' data-id="'+safe(id)+'"':'')+'>'+label+'</button>';
 function begin(h,alt,partner){
  const selected=alt?{...h,direct:h.alternate.price,discount:0,credit:0,external:null,flex:h.alternate.flex,breakfast:h.alternate.breakfast}:h;
