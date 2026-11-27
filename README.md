@@ -3,6 +3,8 @@
 A frontend-only hotel marketplace concept. Paris, 15–17 January 2027 is the reference scenario. All offers, terms, payment outcomes and bookings are illustrative; no real suppliers, payment gateways or affiliate integrations are connected.
 
 ## Run
+Download `demo.html` and open it directly for a fully self-contained offline version. No external assets or network requests are needed.
+
 Open index.html in a browser, or serve the directory with `python -m http.server 8000` and visit http://localhost:8000. No build or npm dependencies.
 
 ## Demo walkthrough
