@@ -9,6 +9,7 @@ let model={balance:0,trips:[],arm:"hybrid"};
 try{const v=JSON.parse(localStorage.getItem(storeKey));if(v&&Array.isArray(v.trips)&&Number.isFinite(v.balance))model=v}catch{}
 const arms={control:[0,0,"Control · no incentive"],match:[14,0,"Price match"],credits:[0,14,"Credits only"],hybrid:[10,4,"Hybrid discount + credits"]};
 if(!arms[model.arm])model.arm="hybrid";
+model.trips=model.trips.filter(t=>t.channel==="direct");
 let flow=null,returnFocus=null;
 const persist=()=>{try{localStorage.setItem(storeKey,JSON.stringify(model))}catch{};updateNav()};
 function updateNav(){const nav=document.querySelector(".credit-button");if(nav)nav.innerHTML=icon("loop")+" Loop Credits"+(model.balance?" · "+eur(model.balance):"");const trip=document.querySelector('[data-action="trips"]');if(trip)trip.textContent="My trips"+(model.trips.length?" ("+model.trips.length+")":"")}
@@ -19,17 +20,17 @@ closeModal=function(){originalClose();document.querySelector(".modal").classList
 $("closeModal").removeEventListener("click",originalClose);
 $("closeModal").addEventListener("click",closeModal);
 const act=(action,label,cls="secondary",id="")=>'<button type="button" class="'+cls+'" data-action="'+action+'"'+(id?' data-id="'+safe(id)+'"':'')+'>'+label+'</button>';
-function begin(h,alt,partner){
+function begin(h,alt){
  const selected=alt?{...h,direct:h.alternate.price,discount:0,credit:0,external:null,flex:h.alternate.flex,breakfast:h.alternate.breakfast}:h;
- const base=partner?cost(h,"external"):cost(selected,"base");
- const total=partner?base:cost(selected);
- flow={h: selected,channel:partner?"partner":"direct",partner:h.partner,ci,co,nights,guests,rooms,base,total,discount:base-total,earn:partner?0:credits(selected),redeem:0,guest:{first:"",last:"",email:"",phone:"",request:""},step:0,busy:false,method:"card"};
+ const base=cost(selected,"base");
+ const total=cost(selected);
+ flow={h: selected,channel:"direct",ci,co,nights,guests,rooms,base,total,discount:base-total,earn:credits(selected),redeem:0,guest:{first:"",last:"",email:"",phone:"",request:""},step:0,busy:false,method:"card"};
  step(0);
 }
 const due=()=>Math.max(0,flow.total-flow.redeem);
 function summary(){
  const f=flow;
- return '<aside class="ck-summary"><div class="ck-stamp">'+(f.channel==="direct"?"WANDERLOOP / DIRECT":"PARTNER / SIMULATION")+'</div><h3>'+safe(f.h.name)+'</h3><p>'+safe(f.h.room)+' · '+f.guests+' adults · '+f.rooms+' '+(f.rooms===1?"room":"rooms")+'</p><div class="ck-dates"><div><small>CHECK IN</small><b>'+labelDate(f.ci)+'</b></div><div><small>CHECK OUT</small><b>'+labelDate(f.co)+'</b></div><div><small>STAY</small><b>'+f.nights+' '+(f.nights===1?"night":"nights")+'</b></div></div><p class="ck-terms">'+(f.h.breakfast?"Breakfast included":"Room only")+' · '+(f.h.flex?"Free cancellation before simulated stay":"Non-refundable")+'</p><div class="ck-line"><span>Stay total before incentive</span><b>'+eur(f.base)+'</b></div>'+(f.discount?'<div class="ck-line positive"><span>Instant Wanderloop discount</span><b>−'+eur(f.discount)+'</b></div>':'')+(f.redeem?'<div class="ck-line positive"><span>Available credits applied</span><b>−'+eur(f.redeem)+'</b></div>':'')+'<div class="ck-line"><span>Additional demo fees</span><b>€0</b></div><div class="ck-total"><span>Pay today<small>Illustrative all-in total</small></span><strong>'+eur(due())+'</strong></div>'+(f.earn?'<div class="ck-reward">'+icon("loop")+' <div><b>Earn '+eur(f.earn)+' future credits</b><small>After your eligible stay is completed. Not deducted today.</small></div></div>':'')+'</aside>';
+ return '<aside class="ck-summary"><div class="ck-stamp">'+"WANDERLOOP / DIRECT"+'</div><h3>'+safe(f.h.name)+'</h3><p>'+safe(f.h.room)+' · '+f.guests+' adults · '+f.rooms+' '+(f.rooms===1?"room":"rooms")+'</p><div class="ck-dates"><div><small>CHECK IN</small><b>'+labelDate(f.ci)+'</b></div><div><small>CHECK OUT</small><b>'+labelDate(f.co)+'</b></div><div><small>STAY</small><b>'+f.nights+' '+(f.nights===1?"night":"nights")+'</b></div></div><p class="ck-terms">'+(f.h.breakfast?"Breakfast included":"Room only")+' · '+(f.h.flex?"Free cancellation before simulated stay":"Non-refundable")+'</p><div class="ck-line"><span>Stay total before incentive</span><b>'+eur(f.base)+'</b></div>'+(f.discount?'<div class="ck-line positive"><span>Instant Wanderloop discount</span><b>−'+eur(f.discount)+'</b></div>':'')+(f.redeem?'<div class="ck-line positive"><span>Available credits applied</span><b>−'+eur(f.redeem)+'</b></div>':'')+'<div class="ck-line"><span>Additional demo fees</span><b>€0</b></div><div class="ck-total"><span>Pay today<small>Illustrative all-in total</small></span><strong>'+eur(due())+'</strong></div>'+(f.earn?'<div class="ck-reward">'+icon("loop")+' <div><b>Earn '+eur(f.earn)+' future credits</b><small>After your eligible stay is completed. Not deducted today.</small></div></div>':'')+'</aside>';
 }
 function label(t,name,type="text",required=false){return '<label class="ck-field">'+t+'<input name="'+name+'" type="'+type+'" '+(required?"required ":"")+'value="'+safe(flow.guest[name])+'" autocomplete="off" maxlength="100"></label>'}
 function step(i,error=""){
@@ -45,14 +46,14 @@ function step(i,error=""){
   content='<h3>Payment method</h3><p>Choose a simulated payment. No card number, CVV, bank account or real payment information is required.</p><form id="ckPayment"><label class="ck-wallet"><input type="radio" name="method" value="card" '+(f.method==="card"?"checked":"")+'> <span><b>Demo credit / debit card</b><small>Test card ending in 4242</small></span></label><label class="ck-wallet"><input type="radio" name="method" value="wallet" '+(f.method==="wallet"?"checked":"")+'> <span><b>Demo digital wallet</b><small>Simulated wallet authorization</small></span></label><label class="ck-field">Payment scenario<select name="scenario"><option value="success">Approve demo payment</option><option value="decline">Decline demo payment (test retry)</option></select></label><label class="ck-consent"><input type="checkbox" name="consent" required><span>I have reviewed the stay, total price and cancellation conditions, and understand this is a fictional booking.</span></label>'+(error?'<p class="ck-error" role="alert">'+safe(error)+'</p>':'')+'<div class="ck-actions">'+act("ck-back","Back")+'<button type="submit" class="primary">Confirm & pay '+eur(due())+'</button></div></form>';
  }
  document.querySelector(".modal").classList.add("checkout-modal");
- openModal('<div class="eyebrow">'+(direct?"WANDERLOOP / DIRECT CHECKOUT":"LEAVING WANDERLOOP / "+safe(f.partner)+" DEMO")+'</div><h2 id="modalTitle">'+heading+'</h2><div class="ck-progress" aria-label="Checkout progress">'+trail+'</div><div class="ck-grid"><section class="ck-main">'+content+'</section>'+summary()+'</div><p class="fine ck-foot">Functional prototype · No actual booking, charge, reservation, partner redirect or email will occur.</p>');
+ openModal('<div class="eyebrow">'+"WANDERLOOP / DIRECT CHECKOUT"+'</div><h2 id="modalTitle">'+heading+'</h2><div class="ck-progress" aria-label="Checkout progress">'+trail+'</div><div class="ck-grid"><section class="ck-main">'+content+'</section>'+summary()+'</div><p class="fine ck-foot">Functional prototype · No actual Wanderloop booking, charge, reservation or email will occur.</p>');
 }
 function makeBooking(){
  if(!flow||flow.busy)return;
  const f=flow;
  if(f.redeem>model.balance){step(1,"Credit balance changed.");return}
  f.busy=true;
- const ref=(f.channel==="direct"?"WL-":"OTA-")+Date.now().toString(36).toUpperCase()+"-"+Math.random().toString(36).slice(2,5).toUpperCase();
+ const ref="WL-"+Date.now().toString(36).toUpperCase()+"-"+Math.random().toString(36).slice(2,5).toUpperCase();
  const t={ref,hotel:f.h.name,channel:f.channel,partner:f.partner,ci:f.ci,co:f.co,nights:f.nights,guests:f.guests,rooms:f.rooms,room:f.h.room,flex:f.h.flex,breakfast:f.h.breakfast,paid:due(),redeemed:f.redeem,discount:f.discount,earn:f.earn,status:"confirmed",method:f.method,created:Date.now()};
  model.balance-=f.redeem;model.trips.unshift(t);persist();
  const guest=safe(f.guest.first);
@@ -81,9 +82,8 @@ function receipt(t){
 handle=function(action,id,alt){
  const h=hotels.find(x=>x.id===id),t=model.trips.find(x=>x.ref===id);
  switch(action){
- case "book":if(h)begin(h,alt,false);break;
- case "external":if(h)openModal('<div class="eyebrow">EXTERNAL OFFER / TRANSPARENT HANDOFF</div><h2 id="modalTitle">Continue to '+safe(h.partner)+'.</h2><p>'+safe(h.name)+' · '+labelDate(ci)+' – '+labelDate(co)+'</p><div class="notice"><div><strong>'+eur(cost(h,"external"))+' total</strong><br>Same illustrative room and booking conditions. No Wanderloop Credits.</div></div><p>In production you would leave Wanderloop to complete the booking with the partner. This demo simulates that separate checkout without contacting an OTA.</p><div class="ck-actions">'+act("partner-checkout","Continue to partner demo "+icon("external"),"primary",h.id)+act("compare","Back to comparison","secondary",h.id)+'</div>');break;
- case "partner-checkout":if(h)begin(h,false,true);break;
+ case "book":if(h)begin(h,alt);break;
+ case "external":if(h)window.location.assign(partnerUrl(h.id,h.partner));break;
  case "ck-fill":if(flow){flow.guest={first:"Alex",last:"Martin",email:"alex@example.com",phone:"",request:""};step(0)}break;
  case "ck-back":if(flow)step(Math.max(0,flow.step-1));break;
  case "ck-pay":if(flow)step(2);break;
